@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Patient Goat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&display=swap');
+
+        :root {
+            --grass-light: #a3e635;
+            --grass-dark: #65a30d;
+            --sky-top: #bae6fd;
+            --sky-bottom: #f0f9ff;
+            --goat-body: #f3f4f6;
+            --goat-horn: #78716c;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
+        }
+
+        /* --- Animation Keyframes --- */
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes chew {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.8); }
+        }
+
+        @keyframes vibrate {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes tail-wag {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(20deg); }
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        @keyframes sun-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(253, 224, 71, 0.5); }
+            50% { box-shadow: 0 0 60px rgba(253, 224, 71, 0.8); }
+        }
+
+        /* --- Classes --- */
+
+        .hill {
+            background: radial-gradient(circle at 50% 120%, var(--grass-light), var(--grass-dark));
+            clip-path: ellipse(100% 80% at 50% 100%);
+        }
+
+        .goat-wrapper {
+            transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: left, transform;
+        }
+
+        .goat-body-group {
+            transform-origin: center bottom;
+        }
+
+        .impatience-shake {
+            animation: vibrate 0.3s linear infinite;
+        }
+
+        .eye {
+            transform-origin: center;
+            animation: blink 4s infinite;
+        }
+
+        .tail {
+            transform-origin: bottom left;
+            animation: tail-wag 1s ease-in-out infinite;
+        }
+
+        .thought-bubble {
+            opacity: 0;
+            transform: translateY(10px) scale(0.8);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .thought-bubble.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); }
+        }
+
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col relative">
+
+    <!-- UI Overlay -->
+    <div class="absolute top-0 left-0 w-full p-6 z-20 flex justify-between items-start pointer-events-none">
+        <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border-b-4 border-blue-200 flex flex-col gap-3 pointer-events-auto">
+            <div class="flex flex-col">
+                <h2 class="text-gray-500 text-sm font-bold uppercase tracking-wider mb-1">Patience Level</h2>
+                <div class="flex items-baseline gap-2">
+                    <span id="timer-display" class="text-5xl font-bold text-blue-600 font-mono">00</span>
+                    <span class="text-gray-400 font-semibold">/ 60</span>
+                </div>
+            </div>
+            <button id="wait-btn" onclick="manualWait()" class="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-blue-200 shadow-lg transition-all transform active:scale-95 active:shadow-none border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
+                WAIT (+1)
+            </button>
+        </div>
+        
+        <div class="pointer-events-auto">
+            <button id="reset-btn" onclick="resetApp()" class="bg-white hover:bg-red-50 text-red-400 hover:text-red-500 p-3 rounded-full shadow-md transition-colors border border-red-100" title="Reset Timer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Message -->
+    <div class="absolute top-32 left-0 w-full text-center z-10 pointer-events-none">
+        <div id="status-pill" class="inline-block bg-yellow-100 text-yellow-800 px-4 py-1 rounded-full text-sm font-semibold opacity-0 transition-opacity duration-500">
+            Waiting for grass...
+        </div>
+    </div>
+
+    <!-- Scene -->
+    <div class="flex-grow relative w-full h-full overflow-hidden">
+        
+        <!-- Sun -->
+        <div class="absolute top-10 right-10 w-24 h-24 bg-yellow-300 rounded-full animate-[sun-pulse_4s_ease-in-out_infinite]"></div>
+        <div class="absolute top-14 right-16 w-6 h-6 bg-white/40 rounded-full"></div>
+
+        <!-- Clouds -->
+        <div class="absolute top-20 left-20 text-white/60 animate-[float_6s_ease-in-out_infinite]">
+            <svg width="100" height="60" viewBox="0 0 100 60" fill="currentColor"><path d="M10,40 Q20,10 40,30 Q60,0 80,30 Q95,30 90,50 Q80,60 10,40 Z"/></svg>
+        </div>
+        <div class="absolute top-40 right-40 text-white/40 animate-[float_8s_ease-in-out_infinite_reverse]">
+            <svg width="80" height="50" viewBox="0 0 100 60" fill="currentColor"><path d="M10,40 Q20,10 40,30 Q60,0 80,30 Q95,30 90,50 Q80,60 10,40 Z"/></svg>
+        </div>
+
+        <!-- The Ground -->
+        <div class="absolute bottom-0 left-0 w-[150%] -ml-[25%] h-1/3 hill z-0"></div>
+
+        <!-- The Food (Target) -->
+        <div class="absolute bottom-[18%] right-[10%] z-10" id="food-target">
+            <!-- Haystack / Grass -->
+            <svg width="120" height="100" viewBox="0 0 120 100" class="drop-shadow-xl">
+                <defs>
+                    <linearGradient id="hayGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#bef264;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#65a30d;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <path d="M10,90 Q20,40 40,80 Q50,20 70,80 Q90,30 100,90 Z" fill="url(#hayGrad)" stroke="#4d7c0f" stroke-width="2"/>
+                <path d="M20,90 Q30,60 40,90" fill="none" stroke="#4d7c0f" stroke-width="2"/>
+                <path d="M60,90 Q70,50 80,90" fill="none" stroke="#4d7c0f" stroke-width="2"/>
+                <!-- Sparkles -->
+                <g class="sparkles opacity-0 transition-opacity duration-300" id="food-sparkles">
+                    <path d="M60,10 L65,20 L75,25 L65,30 L60,40 L55,30 L45,25 L55,20 Z" fill="#fef08a" />
+                    <path d="M90,30 L92,35 L97,37 L92,39 L90,44 L88,39 L83,37 L88,35 Z" fill="#fef08a" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- The Goat -->
+        <div id="goat" class="goat-wrapper absolute bottom-[17%] left-[10%] z-10 w-32 h-32">
+            
+            <!-- Thought Bubble -->
+            <div id="thought" class="thought-bubble absolute -top-24 -right-12 bg-white p-4 rounded-2xl rounded-bl-none shadow-xl border-2 border-gray-100 z-50 min-w-[140px] text-center pointer-events-none">
+                <p id="thought-text" class="text-gray-700 font-semibold text-sm leading-tight">I want that grass.</p>
+            </div>
+
+            <!-- Goat SVG -->
+            <svg viewBox="0 0 200 200" width="100%" height="100%">
+                <g class="goat-body-group">
+                    <!-- Legs -->
+                    <path d="M60,160 L60,190" stroke="#e5e7eb" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M140,160 L140,190" stroke="#e5e7eb" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M70,160 L70,195" stroke="#d1d5db" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M150,160 L150,195" stroke="#d1d5db" stroke-width="12" stroke-linecap="round"/>
+
+                    <!-- Tail -->
+                    <path class="tail" d="M40,110 Q20,100 30,80" stroke="#f3f4f6" stroke-width="8" stroke-linecap="round" fill="none"/>
+
+                    <!-- Body -->
+                    <rect x="40" y="90" width="120" height="80" rx="30" fill="#f3f4f6"/>
+                    <rect x="40" y="90" width="120" height="80" rx="30" fill="none" stroke="#e5e7eb" stroke-width="4"/>
+
+                    <!-- Head Group -->
+                    <g transform="translate(130, 60)">
+                        <!-- Ears -->
+                        <ellipse cx="0" cy="10" rx="35" ry="10" fill="#f3f4f6" transform="rotate(-10)"/>
+                        
+                        <!-- Head Shape -->
+                        <circle cx="0" cy="0" r="40" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="3"/>
+                        
+                        <!-- Horns -->
+                        <path d="M-15,-30 Q-25,-60 -5,-70" fill="none" stroke="#78716c" stroke-width="6" stroke-linecap="round"/>
+                        <path d="M15,-30 Q25,-60 5,-70" fill="none" stroke="#78716c" stroke-width="6" stroke-linecap="round"/>
+
+                        <!-- Face -->
+                        <g class="eye" transform="translate(-15, -5)">
+                            <circle r="4" fill="#1f2937"/>
+                        </g>
+                        <g class="eye" transform="translate(15, -5)">
+                            <circle r="4" fill="#1f2937"/>
+                        </g>
+
+                        <!-- Snout -->
+                        <ellipse cx="0" cy="20" rx="18" ry="12" fill="#e5e7eb"/>
+                        <path id="mouth" d="M-5,25 Q0,30 5,25" stroke="#374151" stroke-width="2" fill="none"/>
+                        
+                        <!-- Beard -->
+                        <path d="M-5,35 L0,50 L5,35" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="2"/>
+                    </g>
+                </g>
+            </svg>
+        </div>
+
+        <!-- Progress Bar (Bottom) -->
+        <div class="absolute bottom-0 left-0 w-full h-2 bg-gray-200">
+            <div id="progress-fill" class="h-full bg-blue-500 transition-all duration-1000 ease-linear w-0"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const TARGET_COUNT = 60;
+        const START_X_PERCENT = 10; // Start position CSS left %
+        const END_X_PERCENT = 75;   // Target position CSS left % (approx touching food)
+        
+        // --- State ---
+        let count = 0;
+        let isFinished = false;
+        
+        // --- DOM Elements ---
+        const timerDisplay = document.getElementById('timer-display');
+        const goat = document.getElementById('goat');
+        const goatBody = document.querySelector('.goat-body-group');
+        const progressFill = document.getElementById('progress-fill');
+        const thoughtBubble = document.getElementById('thought');
+        const thoughtText = document.getElementById('thought-text');
+        const statusPill = document.getElementById('status-pill');
+        const sparkles = document.getElementById('food-sparkles');
+        const mouth = document.getElementById('mouth');
+        const waitBtn = document.getElementById('wait-btn');
+
+        // --- Thoughts Database (UX Writing) ---
+        const thoughts = [
+            { at: 1, text: "I can wait manually." },
+            { at: 5, text: "Clicking is hard work." },
+            { at: 10, text: "Still waiting..." },
+            { at: 15, text: "My stomach is rumbling." },
+            { at: 20, text: "Why 60? Why not 20?" },
+            { at: 25, text: "*Stares intensely*" },
+            { at: 30, text: "Halfway there... ugh." },
+            { at: 35, text: "I can smell it from here." },
+            { at: 40, text: "Patience is a virtue. I hate virtue." },
+            { at: 45, text: "MUST. EAT. GRASS." },
+            { at: 50, text: "Almost... so close..." },
+            { at: 55, text: "PREPARING FOR LAUNCH." },
+            { at: 58, text: "READY..." },
+            { at: 59, text: "SET..." }
+        ];
+
+        // --- App Logic ---
+
+        function initApp() {
+            statusPill.style.opacity = 1;
+            // No interval started here anymore
+        }
+
+        function manualWait() {
+            if (isFinished) return;
+            
+            count++;
+            updateUI();
+
+            // Add immediate visual feedback on click
+            goat.style.transform = "scale(1.05)";
+            setTimeout(() => goat.style.transform = "scale(1)", 100);
+
+            if (count >= TARGET_COUNT) {
+                finish();
+            } else {
+                handleTickAnimations();
+            }
+        }
+
+        function updateUI() {
+            // Update Number
+            timerDisplay.innerText = count.toString().padStart(2, '0');
+            
+            // Update Progress Bar
+            const percentage = (count / TARGET_COUNT) * 100;
+            progressFill.style.width = `${percentage}%`;
+
+            // Check for Thoughts
+            const thought = thoughts.find(t => t.at === count);
+            if (thought) showThought(thought.text);
+
+            // Calculate Position
+            // We want the goat to move VERY slightly to show eagerness, 
+            // but mostly wait until the end.
+            // Let's move him 20% of the way there during the wait, then sprint at the end.
+            const travelDist = END_X_PERCENT - START_X_PERCENT;
+            const currentDist = START_X_PERCENT + ((count / TARGET_COUNT) * (travelDist * 0.2)); 
+            
+            // Only update position if strictly waiting. If finished, logic handled elsewhere.
+            if (count < TARGET_COUNT) {
+                goat.style.left = `${currentDist}%`;
+            }
+        }
+
+        function handleTickAnimations() {
+            // Add "Impatience" shake effect based on how high the count is
+            if (count > 40) {
+                // Trigger a single shake burst on click instead of continuous loop
+                goatBody.style.animation = 'none';
+                goatBody.offsetHeight; /* trigger reflow */
+                goatBody.style.animation = "vibrate 0.3s linear";
+            }
+
+            // Hop animation occasionally
+            if (count % 5 === 0) {
+                goat.style.transform = "translateY(-20px)";
+                setTimeout(() => goat.style.transform = "translateY(0)", 200);
+            }
+        }
+
+        function showThought(text) {
+            thoughtText.innerText = text;
+            thoughtBubble.classList.add('visible');
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                thoughtBubble.classList.remove('visible');
+            }, 3000);
+        }
+
+        function finish() {
+            isFinished = true;
+            waitBtn.disabled = true;
+            waitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // 1. Visual changes
+            statusPill.innerText = "GO!!!";
+            statusPill.className = "inline-block bg-green-500 text-white px-6 py-2 rounded-full text-xl font-bold animate-bounce shadow-lg";
+            thoughtBubble.classList.remove('visible'); // Hide thoughts
+            goatBody.style.animation = "none";
+
+            // 2. The Sprint
+            goat.style.transition = "left 0.5s ease-in";
+            goat.style.left = `${END_X_PERCENT}%`; // Move to food
+
+            // 3. Eating Animation (after sprint arrives)
+            setTimeout(() => {
+                startEating();
+            }, 500);
+        }
+
+        function startEating() {
+            // Change mouth to chewing
+            mouth.setAttribute('d', 'M-5,25 Q0,35 5,25'); // Open mouth slightly
+            
+            // Add chewing animation
+            goatBody.style.animation = "chew 0.4s infinite";
+            
+            // Sparkles on food
+            sparkles.classList.remove('opacity-0');
+
+            // Show satisfaction thought
+            showThought("MUNCH MUNCH MUNCH!");
+
+            // Confetti explosion
+            createConfetti();
+        }
+
+        function resetApp() {
+            isFinished = false;
+            count = 0;
+            waitBtn.disabled = false;
+            waitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // Reset UI
+            timerDisplay.innerText = "00";
+            progressFill.style.width = "0%";
+            statusPill.style.opacity = 0;
+            statusPill.innerText = "Waiting for grass...";
+            statusPill.className = "inline-block bg-yellow-100 text-yellow-800 px-4 py-1 rounded-full text-sm font-semibold opacity-0 transition-opacity duration-500";
+            
+            // Reset Goat
+            goat.style.transition = "left 1s ease-in-out";
+            goat.style.left = `${START_X_PERCENT}%`;
+            goatBody.classList.remove('impatience-shake');
+            goatBody.style.animation = "none";
+            mouth.setAttribute('d', 'M-5,25 Q0,30 5,25'); // Reset mouth
+            sparkles.classList.add('opacity-0');
+            thoughtBubble.classList.remove('visible');
+
+            // Remove confetti
+            document.querySelectorAll('.confetti').forEach(e => e.remove());
+
+            // Restart state
+            initApp();
+        }
+
+        function createConfetti() {
+            const colors = ['#bef264', '#84cc16', '#ffffff', '#fde047'];
+            for (let i = 0; i < 50; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = (Math.random() * 100) + 'vw';
+                conf.style.top = '-10px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(conf);
+            }
+        }
+
+        // Start immediately
+        window.onload = initApp;
+
+    </script>
+</body>
+</html>
