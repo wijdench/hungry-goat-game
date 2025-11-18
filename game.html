@@ -6,7 +6,7 @@
     <title>The Patient Goat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&display=swap');
 
         :root {
             --grass-light: #a3e635;
@@ -58,6 +58,11 @@
             0%, 100% { box-shadow: 0 0 20px rgba(253, 224, 71, 0.5); }
             50% { box-shadow: 0 0 60px rgba(253, 224, 71, 0.8); }
         }
+        
+        @keyframes progress-stripes {
+            0% { background-position: 50px 0; }
+            100% { background-position: 0 0; }
+        }
 
         /* --- Classes --- */
 
@@ -107,42 +112,64 @@
             background-color: #f00;
             animation: fall linear forwards;
         }
-
-        @keyframes fall {
-            to { transform: translateY(100vh) rotate(720deg); }
+        
+        .progress-candy {
+            background-image: linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, .15) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, .15) 50%,
+                rgba(255, 255, 255, .15) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 50px 50px;
+            animation: progress-stripes 2s linear infinite;
         }
 
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col relative">
 
-    <!-- UI Overlay -->
-    <div class="absolute top-0 left-0 w-full p-6 z-20 flex justify-between items-start pointer-events-none">
-        <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border-b-4 border-blue-200 flex flex-col gap-3 pointer-events-auto">
-            <div class="flex flex-col">
-                <h2 class="text-gray-500 text-sm font-bold uppercase tracking-wider mb-1">Patience Level</h2>
-                <div class="flex items-baseline gap-2">
-                    <span id="timer-display" class="text-5xl font-bold text-blue-600 font-mono">00</span>
-                    <span class="text-gray-400 font-semibold">/ 60</span>
-                </div>
-            </div>
-            <button id="wait-btn" onclick="manualWait()" class="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-blue-200 shadow-lg transition-all transform active:scale-95 active:shadow-none border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
-                WAIT (+1)
-            </button>
-        </div>
-        
-        <div class="pointer-events-auto">
-            <button id="reset-btn" onclick="resetApp()" class="bg-white hover:bg-red-50 text-red-400 hover:text-red-500 p-3 rounded-full shadow-md transition-colors border border-red-100" title="Reset Timer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12"/></svg>
-            </button>
+    <!-- UI Overlay - Main Title/Goal -->
+    <div class="absolute top-0 left-0 w-full p-6 z-20 flex justify-center items-start pointer-events-none">
+        <!-- MAIN GOAL MESSAGE -->
+        <div class="bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-3xl shadow-2xl border-b-8 border-yellow-400 max-w-lg text-center pointer-events-auto">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 mb-1 leading-tight">
+                MYA Survey <span class="text-yellow-500">Is Waiting for Devs...</span>
+            </h1>
+            <p class="text-base md:text-lg text-gray-600 font-semibold">
+                Help Billy get his snack by clicking the button for every **Developer** who completes the survey (Target: 60 Devs).
+            </p>
         </div>
     </div>
 
-    <!-- Status Message -->
-    <div class="absolute top-32 left-0 w-full text-center z-10 pointer-events-none">
-        <div id="status-pill" class="inline-block bg-yellow-100 text-yellow-800 px-4 py-1 rounded-full text-sm font-semibold opacity-0 transition-opacity duration-500">
-            Waiting for grass...
+    <!-- Status Message - Moved lower -->
+    <div class="absolute top-52 left-0 w-full text-center z-10 pointer-events-none">
+        <div id="status-pill" class="inline-block bg-yellow-100 text-yellow-800 px-6 py-2 rounded-full text-lg font-bold opacity-0 transition-opacity duration-500 shadow-md">
+            Billy is waiting for Dev Participation...
         </div>
+    </div>
+
+    <!-- Controls - Moved to bottom right -->
+    <div class="absolute bottom-10 right-10 z-20 flex flex-col gap-3 pointer-events-auto">
+         <!-- Patience Level Display -->
+        <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border-b-4 border-blue-200 flex flex-col gap-1 items-center">
+            <h2 class="text-gray-500 text-sm font-bold uppercase tracking-wider">Dev Participation Count</h2>
+            <div class="flex items-baseline gap-1">
+                <span id="timer-display" class="text-5xl font-bold text-blue-600 font-mono">00</span>
+                <span class="text-gray-400 font-semibold">/ 60</span>
+            </div>
+        </div>
+        
+        <button id="wait-btn" onclick="manualWait()" class="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-blue-200 shadow-lg transition-all transform active:scale-95 active:shadow-none border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
+            DEVELOPER COMPLETED SURVEY (+1)
+        </button>
+        
+        <button id="reset-btn" onclick="resetApp()" class="bg-white hover:bg-red-50 text-red-400 hover:text-red-500 p-3 rounded-full shadow-md transition-colors border border-red-100 self-center" title="Reset Game">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12"/></svg>
+        </button>
     </div>
 
     <!-- Scene -->
@@ -241,7 +268,7 @@
 
         <!-- Progress Bar (Bottom) -->
         <div class="absolute bottom-0 left-0 w-full h-2 bg-gray-200">
-            <div id="progress-fill" class="h-full bg-blue-500 transition-all duration-1000 ease-linear w-0"></div>
+            <div id="progress-fill" class="h-full bg-blue-500 progress-candy transition-all duration-1000 ease-linear w-0"></div>
         </div>
 
     </div>
@@ -270,19 +297,19 @@
 
         // --- Thoughts Database (UX Writing) ---
         const thoughts = [
-            { at: 1, text: "I can wait manually." },
-            { at: 5, text: "Clicking is hard work." },
-            { at: 10, text: "Still waiting..." },
-            { at: 15, text: "My stomach is rumbling." },
-            { at: 20, text: "Why 60? Why not 20?" },
-            { at: 25, text: "*Stares intensely*" },
-            { at: 30, text: "Halfway there... ugh." },
-            { at: 35, text: "I can smell it from here." },
-            { at: 40, text: "Patience is a virtue. I hate virtue." },
-            { at: 45, text: "MUST. EAT. GRASS." },
-            { at: 50, text: "Almost... so close..." },
-            { at: 55, text: "PREPARING FOR LAUNCH." },
-            { at: 58, text: "READY..." },
+            { at: 1, text: "One down, 59 to go. I believe in these devs!" },
+            { at: 5, text: "Clicking is hard work. But waiting for 60 devs is harder." },
+            { at: 10, text: "Still waiting... I hope they're being thorough." },
+            { at: 15, text: "My stomach is rumbling. Keep that participation up!" },
+            { at: 20, text: "Twenty devs deep! Keep it moving, people." },
+            { at: 25, text: "*Stares intensely at the counter*" },
+            { at: 30, text: "Halfway to the target! 30 more devs, then I feast!" },
+            { at: 35, text: "I can smell the success from here. Get those surveys in!" },
+            { at: 40, text: "Patience is a virtue, but participation is faster." },
+            { at: 45, text: "MUST. REACH. 60. DEVS." },
+            { at: 50, text: "Almost... so close... Come on, Devs!" },
+            { at: 55, text: "PREPARING FOR LAUNCH. Just a few more!" },
+            { at: 58, text: "READY... Don't stop now!" },
             { at: 59, text: "SET..." }
         ];
 
@@ -290,7 +317,8 @@
 
         function initApp() {
             statusPill.style.opacity = 1;
-            // No interval started here anymore
+            // Updated status message to be specific about developer participation
+            statusPill.innerText = "Billy is waiting for Dev Participation..."; 
         }
 
         function manualWait() {
@@ -323,9 +351,6 @@
             if (thought) showThought(thought.text);
 
             // Calculate Position
-            // We want the goat to move VERY slightly to show eagerness, 
-            // but mostly wait until the end.
-            // Let's move him 20% of the way there during the wait, then sprint at the end.
             const travelDist = END_X_PERCENT - START_X_PERCENT;
             const currentDist = START_X_PERCENT + ((count / TARGET_COUNT) * (travelDist * 0.2)); 
             
@@ -367,7 +392,8 @@
             waitBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             // 1. Visual changes
-            statusPill.innerText = "GO!!!";
+            // Updated final message
+            statusPill.innerText = "60 DEVS COMPLETE! MUNCH TIME!"; 
             statusPill.className = "inline-block bg-green-500 text-white px-6 py-2 rounded-full text-xl font-bold animate-bounce shadow-lg";
             thoughtBubble.classList.remove('visible'); // Hide thoughts
             goatBody.style.animation = "none";
@@ -409,8 +435,9 @@
             timerDisplay.innerText = "00";
             progressFill.style.width = "0%";
             statusPill.style.opacity = 0;
-            statusPill.innerText = "Waiting for grass...";
-            statusPill.className = "inline-block bg-yellow-100 text-yellow-800 px-4 py-1 rounded-full text-sm font-semibold opacity-0 transition-opacity duration-500";
+            // Updated reset message
+            statusPill.innerText = "Billy is waiting for Dev Participation..."; 
+            statusPill.className = "inline-block bg-yellow-100 text-yellow-800 px-6 py-2 rounded-full text-lg font-bold opacity-0 transition-opacity duration-500 shadow-md";
             
             // Reset Goat
             goat.style.transition = "left 1s ease-in-out";
